@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: dp_place_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRESQL_USER}
+      POSTGRES_PASSWORD: ${POSTGRESQL_PASS}
+      POSTGRES_DB: ${POSTGRESQL_NAME}
+    ports:
+      - "${POSTGRESQL_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: dp_place_redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis_data:/data
+
+
+volumes:
+  postgres_data:
+  redis_data:
