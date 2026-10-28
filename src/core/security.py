@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import jwt
 from pwdlib import PasswordHash
-
+from fastapi import HTTPException, status
 from src.core.config import settings
 
 
@@ -10,7 +10,7 @@ password_hash = PasswordHash.recommended()
 class Security:
     @staticmethod
     def get_password_hash(password: str) -> str:
-        return password_hash(password)
+        return password_hash.hash(password)
 
     @staticmethod
     def verify_password(password: str, hashed_password: str) -> bool:
@@ -43,3 +43,23 @@ class Security:
             settings.JWT_SECRET_KEY,
             algorithm=settings.JWT_ALGORITHM
         )
+
+    @staticmethod
+    def decode_token(token: str) -> dict:
+        try:
+            payload = jwt.decode(
+                token,
+                settings.JWT_SECRET_KEY,
+                algorithms=[settings.JWT_ALGORITHM],
+            )
+            return payload
+        except jwt.ExpiredSignatureError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has expired"
+            )
+        except jwt.InvalidTokenError:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token"
+            )
