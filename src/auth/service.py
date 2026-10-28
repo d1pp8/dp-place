@@ -24,8 +24,7 @@ class AuthService:
 
     async def authenticate_user(self, email: str, password: str) -> TokenResponse | None:
         user = await self.repository.get_by_email(email=email)
-        valid = Security.verify_password(password=password, hashed_password=user.hashed_password)
-        if user is None or not valid:
+        if user is None or not Security.verify_password(password=password, hashed_password=user.hashed_password):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid email or password"
