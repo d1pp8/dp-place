@@ -4,7 +4,12 @@ from sqlalchemy import text
 from src.core.database import SessionDep
 from src.core.redis import RedisDep
 
+from src.auth.router import router as user_router
+
 app = FastAPI(title="dp-place")
+
+app.include_router(user_router)
+
 
 
 @app.get("/health")
