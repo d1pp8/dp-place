@@ -6,6 +6,7 @@ from src.core.redis import RedisDep
 
 app = FastAPI(title="dp-place")
 
+
 @app.get("/health")
 async def get_database_health(session: SessionDep, redis: RedisDep):
     res = await session.execute(text("SELECT 1"))
