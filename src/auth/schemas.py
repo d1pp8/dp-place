@@ -25,4 +25,4 @@ class UserOut(UserBase):
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
-    type: str = "bearer"
+    token_type: str = "bearer"
