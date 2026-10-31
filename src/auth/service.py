@@ -21,25 +21,24 @@ class AuthService:
         new_user = self._new_user(data=user_data, hashed_password=hashed_password)
         return await self.repository.create(new_user)
 
-
     async def authenticate_user(self, email: str, password: str) -> TokenResponse | None:
         user = await self.repository.get_by_email(email=email)
-        if user is None or not Security.verify_password(password=password, hashed_password=user.hashed_password):
+        if user is None or not Security.verify_password(
+                password=password,
+                hashed_password=user.hashed_password
+        ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password"
+                detail="Invalid email or password",
             )
 
         access_token = Security.create_access_token(user.id, user.role)
         refresh_token = Security.create_refresh_token(user.id)
         return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
-
-
     @staticmethod
     def _new_user(data: UserIn, hashed_password: str) -> dict:
         return {
             "email": data.email,
             "hashed_password": hashed_password,
-            "role": data.role,
         }
