@@ -9,9 +9,7 @@ from src.core.database import Base
 
 class UserRole(StrEnum):
     ADMIN = "admin"
-    BUYER = "buyer"
-    SELLER = "seller"
-
+    USER = "user"
 
 class User(Base):
     __tablename__ = "users"
@@ -19,7 +17,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column()
-    role: Mapped[UserRole] = mapped_column(default=UserRole.BUYER)
+    role: Mapped[UserRole] = mapped_column(default=UserRole.USER)
 
     is_active: Mapped[bool] = mapped_column(default=True)
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
