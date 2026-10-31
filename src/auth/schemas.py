@@ -7,7 +7,6 @@ from src.auth.models import UserRole
 
 class UserBase(BaseModel):
     email: EmailStr
-    role: UserRole = UserRole.BUYER
 
 
 class UserIn(UserBase):
@@ -16,6 +15,7 @@ class UserIn(UserBase):
 
 class UserOut(UserBase):
     id: int
+    role: UserRole
     is_active: bool
     created_at: datetime
 
