@@ -1,5 +1,6 @@
 from fastapi import HTTPException, status
 from redis.asyncio import Redis
+from sqlalchemy.exc import IntegrityError
 
 from src.auth.repository import UserRepository
 from src.auth.schemas import UserIn, TokenResponse
@@ -16,12 +17,18 @@ class AuthService:
         if await self.repository.get_by_email(user_data.email):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Email already registered",
+                detail="Email already registered.",
             )
 
         hashed_password = Security.get_password_hash(user_data.password)
         new_user = self._new_user(data=user_data, hashed_password=hashed_password)
-        return await self.repository.create(new_user)
+        try:
+            return await self.repository.create(new_user)
+        except IntegrityError:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Email already registered."
+            )
 
 
     async def authenticate_user(self, email: str, password: str, redis: Redis) -> TokenResponse | None:
