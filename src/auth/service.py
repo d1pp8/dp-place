@@ -46,7 +46,7 @@ class AuthService:
         refresh_token, jti = Security.create_refresh_token(user.id)
 
         refresh_expire_seconds = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
-        await redis.setex(f"refresh_token:{user.id}:{jti}", refresh_expire_seconds, "active")
+        await redis.set(name=f"refresh_token:{user.id}:{jti}", value="active", ex=refresh_expire_seconds)
 
         return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
@@ -90,7 +90,7 @@ class AuthService:
         new_refresh_token, new_jti = Security.create_refresh_token(user_id)
 
         refresh_expire_seconds = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
-        await redis.setex(f"refresh_token:{user.id}:{new_jti}", refresh_expire_seconds, "active")
+        await redis.set(name=f"refresh_token:{user.id}:{new_jti}", value="active", ex=refresh_expire_seconds)
 
         return TokenResponse(
             access_token=access_token,
@@ -99,7 +99,7 @@ class AuthService:
 
     async def logout(self, token: str, refresh_token: str | None, redis: Redis) -> dict:
         expire_seconds = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
-        await redis.setex(f"blacklist:{token}", expire_seconds, "revoked")
+        await redis.set(name=f"blacklist:{token}", value="revoked", ex=expire_seconds)
 
         if  refresh_token:
             try:
