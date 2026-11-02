@@ -31,21 +31,21 @@ async def get_current_user(token: TokenDep, repository: RepositoryDep, redis: Re
     if is_blacklisted:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token has been revoked (logged out)"
+            detail="Token has been revoked (logged out)."
         )
 
     payload = Security.decode_token(token)
     if payload.get("type") != "access":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token"
+            detail="Invalid token."
         )
     user_id = int(payload.get("sub"))
     user = await repository.get_by_id(user_id=user_id)
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found or inactive"
+            detail="User not found or inactive."
         )
     return user
 
@@ -59,7 +59,7 @@ class RoleChecker:
         if user.role not in self.allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You do not have enough permissions"
+                detail="You do not have enough permissions."
             )
         return user
 

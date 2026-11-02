@@ -39,7 +39,7 @@ class AuthService:
         ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password",
+                detail="Invalid email or password.",
             )
 
         access_token = Security.create_access_token(user.id, user.role)
