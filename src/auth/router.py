@@ -17,19 +17,19 @@ async def register(service: AuthServiceDep, user: UserIn) -> Any:
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(form_data: OAuthFormDep, service: AuthServiceDep) -> Any:
-    return await service.authenticate_user(
-        email=form_data.username,
-        password=form_data.password
-    )
+async def login(form_data: OAuthFormDep, service: AuthServiceDep, redis: RedisDep) -> Any:
+    return await service.authenticate_user(email=form_data.username, password=form_data.password, redis=redis)
+
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_toke(body: RefreshTokenRequest, service: AuthServiceDep):
-    return await service.refresh_tokens(body.refresh_token)
+async def refresh_toke(body: RefreshTokenRequest, service: AuthServiceDep, redis: RedisDep):
+    return await service.refresh_tokens(refresh_token=body.refresh_token, redis=redis)
+
 
 @router.post("/logout")
-async def logout(token: TokenDep, current_user: CurrentUserDep, redis: RedisDep, service: AuthServiceDep):
-    return await service.logout(token=token, redis=redis)
+async def logout(token: TokenDep, current_user: CurrentUserDep, redis: RedisDep, service: AuthServiceDep, refresh_token: str | None = None):
+    return await service.logout(token=token, redis=redis, refresh_token=refresh_token)
+
 
 @router.get("/me", response_model=UserOut)
 async def get_me(current_user: CurrentUserDep):

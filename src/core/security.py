@@ -1,5 +1,7 @@
-from datetime import datetime, timedelta, timezone
 import jwt
+import uuid
+
+from datetime import datetime, timedelta, timezone
 from pwdlib import PasswordHash
 from fastapi import HTTPException, status
 from src.core.config import settings
@@ -26,12 +28,14 @@ class Security:
         )
 
     @staticmethod
-    def create_refresh_token(user_id: int) -> str:
-        return Security._create_token(
-            data={"sub": str(user_id)},
+    def create_refresh_token(user_id: int) -> tuple[str, str]:
+        jti = str(uuid.uuid4())
+        token =  Security._create_token(
+            data={"sub": str(user_id), "jti": jti},
             expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
             token_type="refresh",
         )
+        return token, jti
 
     @staticmethod
     def decode_token(token: str) -> dict:
