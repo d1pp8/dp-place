@@ -16,8 +16,12 @@ from src.core.config import settings
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+assert settings.POSTGRESQL_TEST_NAME.startswith("test_")
+assert settings.POSTGRESQL_TEST_NAME != settings.POSTGRESQL_NAME
+assert settings.REDIS_TEST_DB != 0
 
-test_engine = create_async_engine(settings.DATABASE_ASYNCPG_URL, echo=True)
+
+test_engine = create_async_engine(settings.TEST_DATABASE)
 test_session_maker = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
 
 async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
@@ -25,19 +29,13 @@ async def override_get_async_session() -> AsyncGenerator[AsyncSession, None]:
         yield session
 
 async def override_get_redis():
-    redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
+    redis = Redis.from_url(settings.TEST_REDIS, decode_responses=True)
     yield redis
     await redis.aclose()
 
 
 app.dependency_overrides[get_async_session] = override_get_async_session
 app.dependency_overrides[get_redis] = override_get_redis
-
-@pytest.fixture(scope="session")
-def event_loop():
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -48,6 +46,10 @@ async def prepare_database():
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
     await test_engine.dispose()
+
+    redis = Redis.from_url(settings.TEST_REDIS)
+    await redis.flushdb()
+    await redis.aclose()
 
 
 @pytest_asyncio.fixture()
