@@ -54,3 +54,26 @@ async def prepare_database():
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
         yield client
+
+
+@pytest_asyncio.fixture
+async def registered_user(async_client: AsyncClient) -> dict:
+    payload = {
+        "email": "test-test@test.com",
+        "password": "123123123"
+    }
+    await async_client.post("/api/v1/auth/register", json=payload)
+    return payload
+
+@pytest_asyncio.fixture
+async def auth_tokens(async_client: AsyncClient, registered_user) -> dict:
+    response = await async_client.post(
+        "/api/v1/auth/login",
+        data={"username": registered_user["email"], "password": registered_user["password"]}
+    )
+    return response.json()
+
+@pytest_asyncio.fixture
+async def authenticated_client(async_client: AsyncClient, auth_tokens) -> AsyncClient:
+    async_client.headers = {"Authorization": f"Bearer {auth_tokens["access_token"]}"}
+    return async_client
