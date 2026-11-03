@@ -33,3 +33,27 @@ async def test_register_duplicate_email(async_client):
     assert res2.status_code == 409
     assert res2.json()["detail"] == "Email already registered."
 
+
+@pytest.mark.parametrize(
+    "extra_fields",
+    [
+        {"role": "admin"},
+        {"is_active": False},
+        {"id": 999},
+    ],
+)
+
+async def test_register_ignores_privileged_fields(async_client, extra_fields):
+    payload = {
+        "email": "hacker@test.com",
+        "password": "test_123123123",
+        **extra_fields,
+    }
+
+    response = await async_client.post(REGISTER_URL, json=payload)
+
+    assert response.status_code == 201
+    data = response.json()
+    assert data["role"] == "user"
+    assert data["is_active"] is True
+    assert data["id"] != 999
