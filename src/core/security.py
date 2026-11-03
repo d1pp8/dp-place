@@ -1,5 +1,6 @@
 import jwt
 import uuid
+import asyncio
 
 from datetime import datetime, timedelta, timezone
 from pwdlib import PasswordHash
@@ -12,12 +13,12 @@ password_hash = PasswordHash.recommended()
 
 class Security:
     @staticmethod
-    def get_password_hash(password: str) -> str:
-        return password_hash.hash(password)
+    async def get_password_hash(password: str) -> str:
+        return await asyncio.to_thread(password_hash.hash, password)
 
     @staticmethod
-    def verify_password(password: str, hashed_password: str) -> bool:
-        return password_hash.verify(password, hashed_password)
+    async def verify_password(password: str, hashed_password: str) -> bool:
+        return await asyncio.to_thread(password_hash.verify, password, hashed_password)
 
     @staticmethod
     def create_access_token(user_id: int, role: str) -> str:
