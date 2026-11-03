@@ -79,3 +79,8 @@ async def auth_tokens(async_client: AsyncClient, registered_user) -> dict:
 async def authenticated_client(async_client: AsyncClient, auth_tokens) -> AsyncClient:
     async_client.headers = {"Authorization": f"Bearer {auth_tokens["access_token"]}"}
     return async_client
+
+@pytest_asyncio.fixture
+async def db_session() -> AsyncGenerator[AsyncSession, None]:
+    async with test_session_maker() as session:
+        yield session
