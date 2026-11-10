@@ -1,4 +1,3 @@
-from fastapi import status
 from redis.asyncio import Redis
 from sqlalchemy.exc import IntegrityError
 

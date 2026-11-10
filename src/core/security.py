@@ -1,12 +1,11 @@
 import jwt
 import uuid
 import asyncio
-
 from datetime import datetime, timedelta, timezone
 from pwdlib import PasswordHash
-from fastapi import HTTPException, status
-from src.core.config import settings
 
+from src.core.config import settings
+from src.core.exceptions import TokenExpired, InvalidToken
 
 password_hash = PasswordHash.recommended()
 
@@ -48,13 +47,9 @@ class Security:
             )
             return payload
         except jwt.ExpiredSignatureError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Token has expired"
-            )
+            raise TokenExpired
         except jwt.InvalidTokenError:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
-            )
+            raise InvalidToken
 
     @staticmethod
     def _create_token(data: dict, expires_delta: timedelta, token_type: str) -> str:
