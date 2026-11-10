@@ -3,14 +3,18 @@ import uuid
 import asyncio
 from datetime import datetime, timedelta, timezone
 from pwdlib import PasswordHash
+from passlib.context import CryptContext
 
 from src.core.config import settings
 from src.core.exceptions import TokenExpired, InvalidToken
 
 password_hash = PasswordHash.recommended()
+pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
 
 
 class Security:
+    TMP_HASH = pwd_context.hash("tmp-password-for-timing-attack-protection")
+
     @staticmethod
     async def get_password_hash(password: str) -> str:
         return await asyncio.to_thread(password_hash.hash, password)
