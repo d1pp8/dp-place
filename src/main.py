@@ -1,12 +1,14 @@
-from fastapi import FastAPI
-from sqlalchemy import text
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from sqladmin import Admin
+from sqlalchemy import text
 
 from src.admin.auth import AdminAuth
+from src.admin.views import UserAdmin
 from src.core.config import settings
 from src.core.database import SessionDep, engine
-from src.admin.views import UserAdmin
 from src.core.redis import RedisDep
+from src.core.exceptions import AppError
 
 from src.auth.router import router as user_router
 
@@ -15,6 +17,13 @@ app.include_router(user_router)
 
 admin = Admin(app, engine, authentication_backend=AdminAuth(secret_key=settings.ADMIN_SESSION_SECRET), title="DP-Place Admin")
 admin.add_view(UserAdmin)
+
+@app.exception_handler(AppError)
+async def app_error_handler(request: Request, exc: AppError):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
 
 
 @app.get("/health")
