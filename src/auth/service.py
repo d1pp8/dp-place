@@ -1,4 +1,4 @@
-from fastapi import HTTPException, status
+from fastapi import status
 from redis.asyncio import Redis
 from sqlalchemy.exc import IntegrityError
 
@@ -7,6 +7,14 @@ from src.auth.schemas import UserIn, TokenResponse
 from src.auth.models import User
 from src.core.config import settings
 from src.core.security import Security
+from src.core.exceptions import (
+    EmailAlreadyExists,
+    InvalidCredentials,
+    InactiveUser,
+    InvalidTokenType,
+    TokenReuseDetected,
+    UserNotFoundOrInactive
+)
 
 
 class AuthService:
@@ -15,20 +23,15 @@ class AuthService:
 
     async def register_user(self, user_data: UserIn) -> User:
         if await self.repository.get_by_email(user_data.email):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Email already registered.",
-            )
+            raise EmailAlreadyExists
 
         hashed_password = await Security.get_password_hash(user_data.password)
         new_user = self._new_user(data=user_data, hashed_password=hashed_password)
         try:
             return await self.repository.create(new_user)
         except IntegrityError:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Email already registered."
-            )
+            raise EmailAlreadyExists
+
 
     @staticmethod
     def _new_user(data: UserIn, hashed_password: str) -> dict:
@@ -44,16 +47,10 @@ class AuthService:
                 password=password,
                 hashed_password=user.hashed_password
         ):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password.",
-            )
+            raise InvalidCredentials
 
         if not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="User is inactive."
-            )
+            raise InactiveUser
 
         access_token = Security.create_access_token(user.id, user.role)
         refresh_token, jti = Security.create_refresh_token(user.id)
@@ -67,10 +64,7 @@ class AuthService:
     async def refresh_tokens(self, refresh_token: str, redis: Redis) -> TokenResponse:
         payload = Security.decode_token(refresh_token)
         if payload.get("type") != "refresh":
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid token type"
-            )
+            raise InvalidTokenType
 
         user_id = int(payload.get("sub"))
         jti = payload.get("jti")
@@ -86,18 +80,12 @@ class AuthService:
                     await redis.delete(*keys)
                 if cursor == 0:
                     break
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Token reuse detected! All sessions revoked for security reasons."
-            )
+            raise TokenReuseDetected
 
         await redis.delete(redis_key)
         user = await self.repository.get_by_id(user_id)
         if not user or not user.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not fount or inactive"
-            )
+            raise UserNotFoundOrInactive
 
         access_token = Security.create_access_token(user_id, user.role)
         new_refresh_token, new_jti = Security.create_refresh_token(user_id)
