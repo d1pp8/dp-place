@@ -10,6 +10,7 @@ from src.core.database import Base
 class UserRole(StrEnum):
     ADMIN = "admin"
     USER = "user"
+    SELLER = "seller"
 
 class User(Base):
     __tablename__ = "users"
