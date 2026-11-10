@@ -11,7 +11,7 @@ class UserRepository:
     async def create(self, user_data: dict) -> User:
         user = User(**user_data)
         self.session.add(user)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(user)
         return user
 

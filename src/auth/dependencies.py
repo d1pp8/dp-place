@@ -15,8 +15,8 @@ def get_user_repository(session: SessionDep) -> UserRepository:
 
 RepositoryDep = Annotated[UserRepository, Depends(get_user_repository)]
 
-def get_auth_service(repository: RepositoryDep) -> AuthService:
-    return AuthService(repository)
+def get_auth_service(repository: RepositoryDep, session: SessionDep) -> AuthService:
+    return AuthService(repository, session)
 
 
 AuthServiceDep = Annotated[AuthService, Depends(get_auth_service)]
