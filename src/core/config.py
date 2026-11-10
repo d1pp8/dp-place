@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     POSTGRESQL_TEST_NAME: str = "test_data_base"
     REDIS_TEST_DB: int = 1
 
+    ADMIN_SESSION_SECRET: str
+
     @property
     def DATABASE_ASYNCPG_URL(self):
         return f"postgresql+asyncpg://{self.POSTGRESQL_USER}:{self.POSTGRESQL_PASS}@{self.POSTGRESQL_HOST}:{self.POSTGRESQL_PORT}/{self.POSTGRESQL_NAME}"
@@ -40,7 +42,7 @@ class Settings(BaseSettings):
         return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_TEST_DB}"
 
     model_config = SettingsConfigDict(
-        env_file=BASE_DIR / ".env", env_file_encoding="utf-8"
+        env_file=BASE_DIR / ".env", env_file_encoding="utf-8", extra="ignore"
     )
 
 
