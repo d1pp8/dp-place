@@ -1,3 +1,4 @@
+import uuid
 from sqladmin.authentication import AuthenticationBackend
 from fastapi import Request
 
@@ -20,7 +21,7 @@ class AdminAuth(AuthenticationBackend):
         if not await Security.verify_password(password=password, hashed_password=user.hashed_password):
             return False
 
-        request.session.update({"admin_user_uuid": user.uuid})
+        request.session.update({"admin_user_uuid": str(user.uuid)})
         return True
 
     async def logout(self, request: Request) -> bool:
@@ -28,8 +29,12 @@ class AdminAuth(AuthenticationBackend):
         return True
 
     async def authenticate(self, request: Request) -> bool:
-        user_uuid = request.session.get("admin_user_uuid")
-        if not user_uuid:
+        user_uuid_str = request.session.get("admin_user_uuid")
+        if not user_uuid_str:
+            return False
+        try:
+            user_uuid = uuid.UUID(user_uuid_str)
+        except (ValueError, TypeError):
             return False
 
         async with async_session_maker() as session:
