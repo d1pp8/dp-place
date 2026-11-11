@@ -1,0 +1,22 @@
+import uuid as u
+from datetime import datetime
+from sqlalchemy import DateTime, Boolean, func, UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from src.core.database import Base
+
+class UUIDMixin:
+    uuid: Mapped[u.UUID] = mapped_column(UUID(as_uuid=True),primary_key=True,default=u.uuid4)
+
+
+class TimestampMixin:
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
+
+
+class SoftDeleteMixin:
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
+class BaseModel(Base, UUIDMixin, TimestampMixin, SoftDeleteMixin):
+    __abstract__ = True
