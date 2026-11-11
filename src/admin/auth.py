@@ -20,7 +20,7 @@ class AdminAuth(AuthenticationBackend):
         if not await Security.verify_password(password=password, hashed_password=user.hashed_password):
             return False
 
-        request.session.update({"admin_user_id": user.id})
+        request.session.update({"admin_user_uuid": user.uuid})
         return True
 
     async def logout(self, request: Request) -> bool:
@@ -28,11 +28,11 @@ class AdminAuth(AuthenticationBackend):
         return True
 
     async def authenticate(self, request: Request) -> bool:
-        user_id = request.session.get("admin_user_id")
-        if not user_id:
+        user_uuid = request.session.get("admin_user_uuid")
+        if not user_uuid:
             return False
 
         async with async_session_maker() as session:
-            user = await UserRepository(session).get_by_id(user_id)
+            user = await UserRepository(session).get_by_uuid(user_uuid)
         return bool(user and user.is_active and user.role == UserRole.ADMIN)
 

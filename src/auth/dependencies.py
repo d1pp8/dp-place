@@ -1,3 +1,4 @@
+import uuid
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -40,8 +41,8 @@ async def get_current_user(token: TokenDep, repository: RepositoryDep, redis: Re
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token."
         )
-    user_id = int(payload.get("sub"))
-    user = await repository.get_by_id(user_id=user_id)
+    user_uuid = uuid.UUID(payload.get("sub"))
+    user = await repository.get_by_uuid(user_uuid=user_uuid)
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

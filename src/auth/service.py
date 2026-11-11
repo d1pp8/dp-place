@@ -1,3 +1,4 @@
+import uuid
 from redis.asyncio import Redis
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -53,11 +54,11 @@ class AuthService:
         if not user.is_active:
             raise InactiveUser
 
-        access_token = Security.create_access_token(user.id, user.role)
-        refresh_token, jti = Security.create_refresh_token(user.id)
+        access_token = Security.create_access_token(user.uuid, user.role)
+        refresh_token, jti = Security.create_refresh_token(user.uuid)
 
         refresh_expire_seconds = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
-        await redis.set(name=f"refresh_token:{user.id}:{jti}", value="active", ex=refresh_expire_seconds)
+        await redis.set(name=f"refresh_token:{user.uuid}:{jti}", value="active", ex=refresh_expire_seconds)
 
         return TokenResponse(access_token=access_token, refresh_token=refresh_token)
 
@@ -68,34 +69,34 @@ class AuthService:
             raise InvalidTokenType
 
         try:
-            user_id = int(payload.get("sub"))
+            user_uuid = uuid.UUID(payload.get("sub"))
             jti = payload.get("jti")
             if not jti:
                 raise ValueError("Missing jti")
         except (ValueError, TypeError) as e:
             raise InvalidToken from e
 
-        redis_key = f"refresh_token:{user_id}:{jti}"
+        redis_key = f"refresh_token:{user_uuid}:{jti}"
         is_active = await redis.getdel(redis_key)
 
         if not is_active:
             cursor = 0
             while True:
-                cursor, keys = await redis.scan(cursor, match=f"refresh_token:{user_id}:*", count=100)
+                cursor, keys = await redis.scan(cursor, match=f"refresh_token:{user_uuid}:*", count=100)
                 if keys:
                     await redis.delete(*keys)
                 if cursor == 0:
                     break
             raise TokenReuseDetected
 
-        user = await self.repository.get_by_id(user_id)
+        user = await self.repository.get_by_uuid(user_uuid)
         if not user or not user.is_active:
             raise UserNotFoundOrInactive
 
-        access_token = Security.create_access_token(user_id, user.role)
-        new_refresh_token, new_jti = Security.create_refresh_token(user_id)
+        access_token = Security.create_access_token(user_uuid, user.role)
+        new_refresh_token, new_jti = Security.create_refresh_token(user_uuid)
         refresh_expire_seconds = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 3600
-        await redis.set(name=f"refresh_token:{user.id}:{new_jti}", value="active", ex=refresh_expire_seconds)
+        await redis.set(name=f"refresh_token:{user_uuid}:{new_jti}", value="active", ex=refresh_expire_seconds)
 
         return TokenResponse(access_token=access_token, refresh_token=new_refresh_token)
 
@@ -108,9 +109,9 @@ class AuthService:
             try:
                 payload = Security.decode_token(refresh_token)
                 if payload.get("type") == "refresh":
-                    user_id = payload.get("sub")
+                    user_uuid = payload.get("sub")
                     jti = payload.get("jti")
-                    await redis.delete(f"refresh_token:{user_id}:{jti}")
+                    await redis.delete(f"refresh_token:{user_uuid}:{jti}")
             except Exception:
                 pass
         return {"detail": "Successfully logged out"}

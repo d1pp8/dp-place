@@ -24,18 +24,18 @@ class Security:
         return await asyncio.to_thread(password_hash.verify, password, hashed_password)
 
     @staticmethod
-    def create_access_token(user_id: int, role: str) -> str:
+    def create_access_token(user_uuid: uuid.UUID, role: str) -> str:
         return Security._create_token(
-            data={"sub": str(user_id), "role": role},
+            data={"sub": str(user_uuid), "role": role},
             expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
             token_type="access",
         )
 
     @staticmethod
-    def create_refresh_token(user_id: int) -> tuple[str, str]:
+    def create_refresh_token(user_uuid: uuid.UUID) -> tuple[str, str]:
         jti = str(uuid.uuid4())
         token =  Security._create_token(
-            data={"sub": str(user_id), "jti": jti},
+            data={"sub": str(user_uuid), "jti": jti},
             expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
             token_type="refresh",
         )

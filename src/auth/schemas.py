@@ -1,5 +1,5 @@
+import uuid
 from datetime import datetime
-
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from src.auth.models import UserRole
@@ -14,7 +14,7 @@ class UserIn(UserBase):
 
 
 class UserOut(UserBase):
-    id: int
+    uuid: uuid.UUID
     role: UserRole
     is_active: bool
     created_at: datetime

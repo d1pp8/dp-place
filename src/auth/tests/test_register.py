@@ -16,7 +16,7 @@ async def test_register_user(async_client):
     assert response.status_code == 201
     data = response.json()
     assert data["email"] == payload["email"]
-    assert "id" in data
+    assert "uuid" in data
     assert "role" in data
 
 
@@ -39,7 +39,7 @@ async def test_register_duplicate_email(async_client):
     [
         {"role": "admin"},
         {"is_active": False},
-        {"id": 999},
+        {"uuid": 999},
     ],
 )
 
@@ -56,4 +56,4 @@ async def test_register_ignores_privileged_fields(async_client, extra_fields):
     data = response.json()
     assert data["role"] == "user"
     assert data["is_active"] is True
-    assert data["id"] != 999
+    assert data["uuid"] != 999
